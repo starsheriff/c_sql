@@ -4,6 +4,11 @@
 #include <sys/types.h>
 #include <stdbool.h>
 
+#define COL_USERNAME_SIZE 32
+#define COL_EMAIL_SIZE 255
+#define TABLE_MAX_PAGES 100
+
+
 typedef struct {
     char* buffer;
     size_t buffer_length;
@@ -77,18 +82,70 @@ typedef enum {
     STATEMENT_SELECT,
 } StatementType;
 
+
+typedef struct {
+    u_int32_t id;
+    char username[COL_USERNAME_SIZE];
+    char email[COL_EMAIL_SIZE];
+}__attribute__((packed)) Row;
+
+const u_int32_t ROW_SIZE = sizeof(Row);
+const u_int32_t PAGE_SIZE = 4096;
+const u_int32_t ROWS_PER_PAGE = PAGE_SIZE/ROW_SIZE;
+const u_int32_t TABLE_MAX_ROWS = ROWS_PER_PAGE*TABLE_MAX_PAGES;
+
+/*typedef struct {*/
+    /*size_t n_rows;*/
+    /*Row* rows;*/
+/*} Page;*/
+
+typedef struct {
+    u_int32_t num_rows;
+    void* pages[TABLE_MAX_PAGES];
+} Table;
+
+Row* row_slot(Table* table, u_int32_t row_num) {
+    /* get the index of the page the row is in */
+    u_int32_t page_num = row_num / ROWS_PER_PAGE;
+
+    void* page = table->pages[page_num];
+    if(page == NULL) {
+        page = table->pages[page_num] = malloc(PAGE_SIZE);
+        /*TODO: init page?*/
+    }
+
+    u_int32_t row_number_within_page = row_num % ROWS_PER_PAGE;
+    u_int32_t offset_in_bytes = row_number_within_page * ROW_SIZE;
+
+    Row* row = page + offset_in_bytes;
+    return row;
+}
+
 typedef struct {
     StatementType type;
+
+    /* temproray place the row here, should be moved later. Not every statement
+     * has a row to insert. */
+    Row row_to_insert;
 } Statement;
 
 typedef enum {
     PARSE_STATEMENT_OK,
     PARSE_STATEMENT_FAIL,
+    PARSE_SYNTAX_ERROR,
 } ParseStatementResult;
 
 ParseStatementResult parse_statement(InputBuffer* b, Statement* s) {
     if(strncmp(b->buffer, "insert", 6) == 0) {
         s->type = STATEMENT_INSERT;
+        int args_assigned = sscanf(
+                b->buffer, "insert %d %s %s",
+                &(s->row_to_insert.id),
+                s->row_to_insert.username,
+                s->row_to_insert.email);
+        if (args_assigned < 3) {
+            return PARSE_SYNTAX_ERROR;
+        }
         return PARSE_STATEMENT_OK;
     }
     if(strncmp(b->buffer, "select", 6) == 0) {
@@ -141,6 +198,9 @@ int main(int argc, char* argv[]) {
         switch(parse_statement(input_buffer, &statement)) {
             case(PARSE_STATEMENT_OK):
                 break;
+            case(PARSE_SYNTAX_ERROR):
+                printf("syntax error\n");
+                continue;
             case(PARSE_STATEMENT_FAIL):
                 printf("error parsing statement\n");
                 continue;

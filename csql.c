@@ -8,6 +8,7 @@ typedef struct {
     char* buffer;
     size_t buffer_length;
     ssize_t input_length;
+    ssize_t cursor;
 } InputBuffer;
 
 InputBuffer*
@@ -16,12 +17,17 @@ new_input_buffer() {
     b->buffer = NULL;
     b->buffer_length = 0;
     b->input_length = 0;
+    b->cursor = 0;
 
     return b;
 }
 
 void print_prompt() {
     printf("csql > ");
+}
+
+void print_welcome() {
+    printf("Welcome to c_sql!\nI am afraid that I cannot do anything meaningful yet.\n");
 }
 
 void read_input(InputBuffer* b) {
@@ -63,11 +69,53 @@ Command match_command(InputBuffer* b) {
         return COMMAND_QUIT;
     }
 
-    printf("unrecognized command: '%s'. \n", b->buffer);
     return COMMAND_UNKNOWN;
 }
 
+typedef enum {
+    STATEMENT_INSERT,
+    STATEMENT_SELECT,
+} StatementType;
+
+typedef struct {
+    StatementType type;
+} Statement;
+
+typedef enum {
+    PARSE_STATEMENT_OK,
+    PARSE_STATEMENT_FAIL,
+} ParseStatementResult;
+
+ParseStatementResult parse_statement(InputBuffer* b, Statement* s) {
+    if(strncmp(b->buffer, "insert", 6) == 0) {
+        s->type = STATEMENT_INSERT;
+        return PARSE_STATEMENT_OK;
+    }
+    if(strncmp(b->buffer, "select", 6) == 0) {
+        s->type = STATEMENT_SELECT;
+        return PARSE_STATEMENT_OK;
+    }
+
+    return PARSE_STATEMENT_FAIL;
+}
+
+void execute_statement(Statement* s) {
+    switch(s->type) {
+        case STATEMENT_INSERT:
+            printf("received an insert statement\n");
+            break;
+        case STATEMENT_SELECT:
+            printf("received an select statement\n");
+            break;
+    }
+}
+
+void print_help() {
+    printf("type .q to exit");
+}
+
 int main(int argc, char* argv[]) {
+    print_welcome();
     InputBuffer* input_buffer = new_input_buffer();
 
     while(true) {
@@ -77,6 +125,7 @@ int main(int argc, char* argv[]) {
         if (is_command(input_buffer)) {
             switch (match_command(input_buffer)) {
             case (COMMAND_HELP):
+                print_help();
             case (COMMAND_QUIT):
                 exit(0);
             case (COMMAND_UNKNOWN):
@@ -88,6 +137,16 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        close_buffer(input_buffer);
+        Statement statement;
+        switch(parse_statement(input_buffer, &statement)) {
+            case(PARSE_STATEMENT_OK):
+                break;
+            case(PARSE_STATEMENT_FAIL):
+                printf("error parsing statement\n");
+                continue;
+        }
+
+        execute_statement(&statement);
+
     }
 }

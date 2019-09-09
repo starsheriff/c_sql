@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <stdbool.h>
 
 typedef struct {
     char* buffer;
@@ -44,19 +45,49 @@ void close_buffer(InputBuffer* b) {
     free(b);
 }
 
+bool is_command(InputBuffer* b) {
+    if (b->input_length > 0 && b->buffer[0] == '.') {
+        return true;
+    }
+    return false;
+}
+
+typedef enum {
+    COMMAND_QUIT,
+    COMMAND_HELP,
+    COMMAND_UNKNOWN,
+} Command;
+
+Command match_command(InputBuffer* b) {
+    if(strcmp(b->buffer, ".q") == 0) {
+        return COMMAND_QUIT;
+    }
+
+    printf("unrecognized command: '%s'. \n", b->buffer);
+    return COMMAND_UNKNOWN;
+}
+
 int main(int argc, char* argv[]) {
     InputBuffer* input_buffer = new_input_buffer();
 
-    while(1) {
+    while(true) {
         print_prompt();
         read_input(input_buffer);
 
-        if(strcmp(input_buffer->buffer, ".q") == 0) {
-            close_buffer(input_buffer);
-            exit(0);
-        } else {
-            printf("unrecognized command: '%s'. \n", input_buffer->buffer);
+        if (is_command(input_buffer)) {
+            switch (match_command(input_buffer)) {
+            case (COMMAND_HELP):
+            case (COMMAND_QUIT):
+                exit(0);
+            case (COMMAND_UNKNOWN):
+                printf("unrecognized command: '%s'. \n", input_buffer->buffer);
+                continue;
+            default:
+                continue;
+
+            }
         }
 
+        close_buffer(input_buffer);
     }
 }

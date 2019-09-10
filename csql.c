@@ -89,27 +89,45 @@ typedef struct {
     char email[COL_EMAIL_SIZE];
 }__attribute__((packed)) Row;
 
-const u_int32_t ROW_SIZE = sizeof(Row);
-const u_int32_t PAGE_SIZE = 4096;
-const u_int32_t ROWS_PER_PAGE = PAGE_SIZE/ROW_SIZE;
-const u_int32_t TABLE_MAX_ROWS = ROWS_PER_PAGE*TABLE_MAX_PAGES;
+#define ROW_SIZE sizeof(Row)
+#define PAGE_SIZE 4096
+#define ROWS_PER_PAGE PAGE_SIZE/ROW_SIZE
+#define TABLE_MAX_ROWS ROWS_PER_PAGE*TABLE_MAX_PAGES
 
-/*typedef struct {*/
-    /*size_t n_rows;*/
-    /*Row* rows;*/
-/*} Page;*/
+typedef struct {
+    Row rows[ROWS_PER_PAGE];
+} Page;
 
 typedef struct {
     u_int32_t num_rows;
-    void* pages[TABLE_MAX_PAGES];
+    Page* pages[TABLE_MAX_PAGES];
 } Table;
 
+Table* new_table() {
+    Table* t = malloc(sizeof(Table));
+    t->num_rows = 0;
+    for(u_int32_t i=0; i<TABLE_MAX_PAGES; i++) {
+        t->pages[i] = NULL;
+    }
+
+    return t;
+}
+
+void free_table(Table* t) {
+    for(u_int32_t i=0; i<TABLE_MAX_PAGES; i++) {
+        free(t->pages[i]);
+    }
+    free(t);
+}
+
 Row* row_slot(Table* table, u_int32_t row_num) {
+    printf("row_num: %d\n", row_num);
     /* get the index of the page the row is in */
     u_int32_t page_num = row_num / ROWS_PER_PAGE;
 
     void* page = table->pages[page_num];
     if(page == NULL) {
+        printf("have to allocate page\n");
         page = table->pages[page_num] = malloc(PAGE_SIZE);
         /*TODO: init page?*/
     }
@@ -156,15 +174,51 @@ ParseStatementResult parse_statement(InputBuffer* b, Statement* s) {
     return PARSE_STATEMENT_FAIL;
 }
 
-void execute_statement(Statement* s) {
+typedef enum {
+    EXECUTE_OK,
+    EXECUTE_FAIL,
+    EXECUTE_TABLE_FULL,
+} ExecuteResult;
+
+ExecuteResult execute_insert(Statement* s, Table* t) {
+    if(t->num_rows >= TABLE_MAX_ROWS) {
+        return EXECUTE_TABLE_FULL;
+    }
+
+    Row row_to_insert = s->row_to_insert;
+
+    Row* row = row_slot(t, t->num_rows);
+
+    /* copy data to location in table */
+    *row = row_to_insert;
+    t->num_rows += 1;
+
+    return EXECUTE_OK;
+}
+
+void print_row(Row* row) {
+    printf("%d\t%s\t%s\n", row->id, row->username, row->email);
+}
+
+ExecuteResult execute_select(Statement* s, Table* t) {
+    Row* row;
+    for(u_int32_t i=0; i < t->num_rows; i++) {
+        row = row_slot(t, i);
+        print_row(row);
+    }
+
+    return EXECUTE_OK;
+}
+
+ExecuteResult execute_statement(Statement* s, Table* t) {
     switch(s->type) {
         case STATEMENT_INSERT:
-            printf("received an insert statement\n");
-            break;
+            return execute_insert(s, t);
         case STATEMENT_SELECT:
-            printf("received an select statement\n");
-            break;
+            return execute_select(s, t);
     }
+
+    return EXECUTE_FAIL;
 }
 
 void print_help() {
@@ -174,6 +228,7 @@ void print_help() {
 int main(int argc, char* argv[]) {
     print_welcome();
     InputBuffer* input_buffer = new_input_buffer();
+    Table* table = new_table();
 
     while(true) {
         print_prompt();
@@ -206,7 +261,19 @@ int main(int argc, char* argv[]) {
                 continue;
         }
 
-        execute_statement(&statement);
-
+        switch (execute_statement(&statement, table)) {
+            case EXECUTE_OK:
+                printf("Executed.\n");
+                break;
+            case EXECUTE_FAIL:
+                printf("Error\n");
+                break;
+            case EXECUTE_TABLE_FULL:
+                printf("No space left in table.\n");
+                break;
+            default:
+                printf("Error\n");
+                break;
+        }
     }
 }

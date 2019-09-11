@@ -5,3 +5,5 @@
 
 
 $(NAME): $(OBJECTS)
+
+table_test: $(OBJECTS)

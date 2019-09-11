@@ -6,16 +6,16 @@
 
 #include "table.h"
 
-typedef struct {
+struct InputBuffer{
     char* buffer;
     size_t buffer_length;
     ssize_t input_length;
     ssize_t cursor;
-} InputBuffer;
+};
 
-InputBuffer*
+struct InputBuffer*
 new_input_buffer() {
-    InputBuffer* b = (InputBuffer*)malloc(sizeof(InputBuffer));
+    struct InputBuffer* b = (struct InputBuffer*)malloc(sizeof(struct InputBuffer));
     b->buffer = NULL;
     b->buffer_length = 0;
     b->input_length = 0;
@@ -32,7 +32,7 @@ void print_welcome() {
     printf("Welcome to c_sql!\nI am afraid that I cannot do anything meaningful yet.\n");
 }
 
-void read_input(InputBuffer* b) {
+void read_input(struct InputBuffer* b) {
     ssize_t bytes_read =
         getline(&b->buffer, &b->buffer_length, stdin);
 
@@ -48,25 +48,25 @@ void read_input(InputBuffer* b) {
     b->buffer[bytes_read-1] = 0;
 }
 
-void close_buffer(InputBuffer* b) {
+void close_buffer(struct InputBuffer* b) {
     free(b->buffer);
     free(b);
 }
 
-bool is_command(InputBuffer* b) {
+bool is_command(struct InputBuffer* b) {
     if (b->input_length > 0 && b->buffer[0] == '.') {
         return true;
     }
     return false;
 }
 
-typedef enum {
+enum Command{
     COMMAND_QUIT,
     COMMAND_HELP,
     COMMAND_UNKNOWN,
-} Command;
+};
 
-Command match_command(InputBuffer* b) {
+enum Command match_command(struct InputBuffer* b) {
     if(strcmp(b->buffer, ".q") == 0) {
         return COMMAND_QUIT;
     }
@@ -74,27 +74,27 @@ Command match_command(InputBuffer* b) {
     return COMMAND_UNKNOWN;
 }
 
-typedef enum {
+enum StatementType{
     STATEMENT_INSERT,
     STATEMENT_SELECT,
-} StatementType;
+};
 
 
-typedef struct {
-    StatementType type;
+struct Statement{
+    enum StatementType type;
 
     /* temproray place the row here, should be moved later. Not every statement
      * has a row to insert. */
-    Row row_to_insert;
-} Statement;
+    struct Row row_to_insert;
+};
 
-typedef enum {
+enum ParseStatementResult{
     PARSE_STATEMENT_OK,
     PARSE_STATEMENT_FAIL,
     PARSE_SYNTAX_ERROR,
-} ParseStatementResult;
+};
 
-ParseStatementResult parse_statement(InputBuffer* b, Statement* s) {
+enum ParseStatementResult parse_statement(struct InputBuffer* b, struct Statement* s) {
     if(strncmp(b->buffer, "insert", 6) == 0) {
         s->type = STATEMENT_INSERT;
         int args_assigned = sscanf(
@@ -115,20 +115,20 @@ ParseStatementResult parse_statement(InputBuffer* b, Statement* s) {
     return PARSE_STATEMENT_FAIL;
 }
 
-typedef enum {
+enum ExecuteResult{
     EXECUTE_OK,
     EXECUTE_FAIL,
     EXECUTE_TABLE_FULL,
-} ExecuteResult;
+};
 
-ExecuteResult execute_insert(Statement* s, Table* t) {
+enum ExecuteResult execute_insert(struct Statement* s, struct Table* t) {
     if(t->num_rows >= TABLE_MAX_ROWS) {
         return EXECUTE_TABLE_FULL;
     }
 
-    Row row_to_insert = s->row_to_insert;
+    struct Row row_to_insert = s->row_to_insert;
 
-    Row* row = row_slot(t, t->num_rows);
+    struct Row* row = row_slot(t, t->num_rows);
 
     /* copy data to location in table */
     *row = row_to_insert;
@@ -137,12 +137,12 @@ ExecuteResult execute_insert(Statement* s, Table* t) {
     return EXECUTE_OK;
 }
 
-void print_row(Row* row) {
+void print_row(struct Row* row) {
     printf("%d\t%s\t%s\n", row->id, row->username, row->email);
 }
 
-ExecuteResult execute_select(Statement* s, Table* t) {
-    Row* row;
+enum ExecuteResult execute_select(struct Statement* s, struct Table* t) {
+    struct Row* row;
     for(u_int32_t i=0; i < t->num_rows; i++) {
         row = row_slot(t, i);
         print_row(row);
@@ -151,7 +151,7 @@ ExecuteResult execute_select(Statement* s, Table* t) {
     return EXECUTE_OK;
 }
 
-ExecuteResult execute_statement(Statement* s, Table* t) {
+enum ExecuteResult execute_statement(struct Statement* s, struct Table* t) {
     switch(s->type) {
         case STATEMENT_INSERT:
             return execute_insert(s, t);
@@ -168,8 +168,8 @@ void print_help() {
 
 int main(int argc, char* argv[]) {
     print_welcome();
-    InputBuffer* input_buffer = new_input_buffer();
-    Table* table = new_table();
+    struct InputBuffer* input_buffer = new_input_buffer();
+    struct Table* table = new_table();
 
     while(true) {
         print_prompt();
@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        Statement statement;
+        struct Statement statement;
         switch(parse_statement(input_buffer, &statement)) {
             case(PARSE_STATEMENT_OK):
                 break;

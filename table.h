@@ -9,27 +9,27 @@
 #define COL_EMAIL_SIZE 255
 
 #define TABLE_MAX_PAGES 100
-#define ROW_SIZE sizeof(Row)
+#define ROW_SIZE sizeof(struct Row)
 #define PAGE_SIZE 4096
 #define ROWS_PER_PAGE PAGE_SIZE/ROW_SIZE
 #define TABLE_MAX_ROWS ROWS_PER_PAGE*TABLE_MAX_PAGES
 
-typedef struct {
+struct Row{
     u_int32_t id;
     char username[COL_USERNAME_SIZE];
     char email[COL_EMAIL_SIZE];
-}__attribute__((packed)) Row;
+}__attribute__((packed));
 
-typedef struct {
-    Row rows[ROWS_PER_PAGE];
-} Page;
+struct Page{
+    struct Row rows[ROWS_PER_PAGE];
+};
 
-typedef struct {
+struct Table {
     u_int32_t num_rows;
-    Page* pages[TABLE_MAX_PAGES];
-} Table;
+    struct Page* pages[TABLE_MAX_PAGES];
+};
 
 
-Table* new_table();
-void free_table(Table*);
-Row* row_slot(Table*, u_int32_t);
+struct Table* new_table();
+void free_table(struct Table*);
+struct Row* row_slot(struct Table*, u_int32_t);

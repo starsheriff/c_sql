@@ -1,5 +1,5 @@
  NAME=csql
- OBJECTS=
+ OBJECTS=table.o
  CFLAGS= -g -Wall
  CC=clang
 

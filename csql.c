@@ -4,10 +4,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 
-#define COL_USERNAME_SIZE 32
-#define COL_EMAIL_SIZE 255
-#define TABLE_MAX_PAGES 100
-
+#include "table.h"
 
 typedef struct {
     char* buffer;
@@ -82,62 +79,6 @@ typedef enum {
     STATEMENT_SELECT,
 } StatementType;
 
-
-typedef struct {
-    u_int32_t id;
-    char username[COL_USERNAME_SIZE];
-    char email[COL_EMAIL_SIZE];
-}__attribute__((packed)) Row;
-
-#define ROW_SIZE sizeof(Row)
-#define PAGE_SIZE 4096
-#define ROWS_PER_PAGE PAGE_SIZE/ROW_SIZE
-#define TABLE_MAX_ROWS ROWS_PER_PAGE*TABLE_MAX_PAGES
-
-typedef struct {
-    Row rows[ROWS_PER_PAGE];
-} Page;
-
-typedef struct {
-    u_int32_t num_rows;
-    Page* pages[TABLE_MAX_PAGES];
-} Table;
-
-Table* new_table() {
-    Table* t = malloc(sizeof(Table));
-    t->num_rows = 0;
-    for(u_int32_t i=0; i<TABLE_MAX_PAGES; i++) {
-        t->pages[i] = NULL;
-    }
-
-    return t;
-}
-
-void free_table(Table* t) {
-    for(u_int32_t i=0; i<TABLE_MAX_PAGES; i++) {
-        free(t->pages[i]);
-    }
-    free(t);
-}
-
-Row* row_slot(Table* table, u_int32_t row_num) {
-    printf("row_num: %d\n", row_num);
-    /* get the index of the page the row is in */
-    u_int32_t page_num = row_num / ROWS_PER_PAGE;
-
-    void* page = table->pages[page_num];
-    if(page == NULL) {
-        printf("have to allocate page\n");
-        page = table->pages[page_num] = malloc(PAGE_SIZE);
-        /*TODO: init page?*/
-    }
-
-    u_int32_t row_number_within_page = row_num % ROWS_PER_PAGE;
-    u_int32_t offset_in_bytes = row_number_within_page * ROW_SIZE;
-
-    Row* row = page + offset_in_bytes;
-    return row;
-}
 
 typedef struct {
     StatementType type;

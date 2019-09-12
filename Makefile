@@ -1,5 +1,5 @@
  NAME=csql
- OBJECTS=table.o
+ OBJECTS=table.o tokenizer.o
  CFLAGS= -g -Wall
  CC=clang
 

@@ -5,24 +5,9 @@
 #include <stdbool.h>
 
 #include "table.h"
+#include "tokenizer.h"
 
-struct InputBuffer{
-    char* buffer;
-    size_t buffer_length;
-    ssize_t input_length;
-    ssize_t cursor;
-};
 
-struct InputBuffer*
-new_input_buffer() {
-    struct InputBuffer* b = (struct InputBuffer*)malloc(sizeof(struct InputBuffer));
-    b->buffer = NULL;
-    b->buffer_length = 0;
-    b->input_length = 0;
-    b->cursor = 0;
-
-    return b;
-}
 
 void print_prompt() {
     printf("csql > ");
@@ -48,11 +33,6 @@ void read_input(struct InputBuffer* b) {
     b->buffer[bytes_read-1] = 0;
 }
 
-void close_buffer(struct InputBuffer* b) {
-    free(b->buffer);
-    free(b);
-}
-
 bool is_command(struct InputBuffer* b) {
     if (b->input_length > 0 && b->buffer[0] == '.') {
         return true;
@@ -72,47 +52,6 @@ enum Command match_command(struct InputBuffer* b) {
     }
 
     return COMMAND_UNKNOWN;
-}
-
-enum StatementType{
-    STATEMENT_INSERT,
-    STATEMENT_SELECT,
-};
-
-
-struct Statement{
-    enum StatementType type;
-
-    /* temproray place the row here, should be moved later. Not every statement
-     * has a row to insert. */
-    struct Row row_to_insert;
-};
-
-enum ParseStatementResult{
-    PARSE_STATEMENT_OK,
-    PARSE_STATEMENT_FAIL,
-    PARSE_SYNTAX_ERROR,
-};
-
-enum ParseStatementResult parse_statement(struct InputBuffer* b, struct Statement* s) {
-    if(strncmp(b->buffer, "insert", 6) == 0) {
-        s->type = STATEMENT_INSERT;
-        int args_assigned = sscanf(
-                b->buffer, "insert %d %s %s",
-                &(s->row_to_insert.id),
-                s->row_to_insert.username,
-                s->row_to_insert.email);
-        if (args_assigned < 3) {
-            return PARSE_SYNTAX_ERROR;
-        }
-        return PARSE_STATEMENT_OK;
-    }
-    if(strncmp(b->buffer, "select", 6) == 0) {
-        s->type = STATEMENT_SELECT;
-        return PARSE_STATEMENT_OK;
-    }
-
-    return PARSE_STATEMENT_FAIL;
 }
 
 enum ExecuteResult{

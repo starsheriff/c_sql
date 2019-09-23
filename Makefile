@@ -7,3 +7,6 @@
 $(NAME): $(OBJECTS)
 
 table_test: $(OBJECTS)
+
+test: table_test
+	./table_test

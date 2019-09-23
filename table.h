@@ -30,7 +30,13 @@ struct Table {
     struct Page* pages[TABLE_MAX_PAGES];
 };
 
+enum InsertResult{
+    INSERT_OK,
+    INSERT_TABLE_FULL,
+};
 
 struct Table* new_table();
 void free_table(struct Table*);
 struct Row* row_slot(struct Table*, u_int32_t);
+
+enum InsertResult insert_row(struct Table*, struct Row);

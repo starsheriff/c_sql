@@ -7,8 +7,6 @@
 #include "table.h"
 #include "tokenizer.h"
 
-
-
 void print_prompt() {
     printf("csql > ");
 }

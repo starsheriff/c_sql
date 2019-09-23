@@ -1,19 +1,27 @@
 #include "table.h"
+#include <assert.h>
 
+
+void test_insert_one() {
+    struct Table* t = new_table();
+    printf("...test_insert_one");
+
+    struct Row src;
+    src.id = 1;
+    strcpy(src.username, "me");
+    strcpy(src.email, "me@mail.to");
+
+    enum InsertResult result = insert_row(t, src);
+
+    assert(result == INSERT_OK);
+    printf("...ok\n");
+
+    free_table(t);
+}
 
 
 int main(int argc, char* argv[]) {
-    struct Table* t = new_table();
-
     printf("Starting to test\n");
 
-    struct Row insert;
-    insert.id = 1;
-    strcpy(insert.username, "starsheriff");
-    strcpy(insert.email, "jo@starsheriff.eu");
-
-    struct Row* cursor = row_slot(t, t->num_rows);
-    *cursor = insert;
-
-    free_table(t);
+    test_insert_one();
 }

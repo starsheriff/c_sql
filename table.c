@@ -34,3 +34,16 @@ struct Row* row_slot(struct Table* table, u_int32_t row_num) {
     return row;
 }
 
+enum InsertResult insert_row(struct Table* t, struct Row r) {
+    if(t->num_rows >= TABLE_MAX_ROWS) {
+        return INSERT_TABLE_FULL;
+    }
+
+    struct Row* dst = row_slot(t, t->num_rows);
+
+    /* copy data to location in table */
+    *dst = r;
+    t->num_rows += 1;
+
+    return INSERT_OK;
+}

@@ -25,6 +25,7 @@ void test_insert_TABLE_MAX_ROWS() {
 
     char* username = malloc(COL_USERNAME_SIZE);
     char* email = malloc(COL_EMAIL_SIZE);
+    enum InsertResult result;
 
     struct Row src;
     for(int i=0; i< TABLE_MAX_ROWS; i++) {
@@ -37,9 +38,14 @@ void test_insert_TABLE_MAX_ROWS() {
         sprintf(email, "me_%d@mail.to", i);
         strcpy(src.email, email);
 
-        enum InsertResult result = insert_row(t, src);
+        result = insert_row(t, src);
         assert(result == INSERT_OK);
     }
+
+    strcpy(src.username, "too many rows now");
+    strcpy(src.email, "will not work");
+    result = insert_row(t, src);
+    assert(result == INSERT_TABLE_FULL);
 
     free(username);
     free(email);

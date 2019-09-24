@@ -19,9 +19,39 @@ void test_insert_one() {
     free_table(t);
 }
 
+void test_insert_TABLE_MAX_ROWS() {
+    struct Table* t = new_table();
+    printf("...test_insert_TABLE_MAX_ROWS");
+
+    char* username = malloc(COL_USERNAME_SIZE);
+    char* email = malloc(COL_EMAIL_SIZE);
+
+    struct Row src;
+    for(int i=0; i< TABLE_MAX_ROWS; i++) {
+
+        src.id = i;
+
+        sprintf(username, "me %d", i);
+        strcpy(src.username, username);
+
+        sprintf(email, "me_%d@mail.to", i);
+        strcpy(src.email, email);
+
+        enum InsertResult result = insert_row(t, src);
+        assert(result == INSERT_OK);
+    }
+
+    free(username);
+    free(email);
+    free_table(t);
+
+    printf("...ok\n");
+}
+
 
 int main(int argc, char* argv[]) {
     printf("Starting to test\n");
 
     test_insert_one();
+    test_insert_TABLE_MAX_ROWS();
 }

@@ -17,8 +17,8 @@
 
 struct Row{
     u_int32_t id;
-    char username[COL_USERNAME_SIZE];
-    char email[COL_EMAIL_SIZE];
+    char username[COL_USERNAME_SIZE+1];
+    char email[COL_EMAIL_SIZE+1];
 }__attribute__((packed));
 
 struct Page{

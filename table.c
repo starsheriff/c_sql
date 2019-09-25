@@ -19,7 +19,8 @@ void free_table(struct Table* t) {
 
 struct Row* row_slot(struct Table* table, u_int32_t row_num) {
     /* get the index of the page the row is in */
-    u_int32_t page_num = row_num / ROWS_PER_PAGE;
+    u_int32_t rows_per_page = ROWS_PER_PAGE;
+    u_int32_t page_num = row_num / rows_per_page;
 
     void* page = table->pages[page_num];
     if(page == NULL) {
@@ -27,7 +28,7 @@ struct Row* row_slot(struct Table* table, u_int32_t row_num) {
         /*TODO: init page?*/
     }
 
-    u_int32_t row_number_within_page = row_num % ROWS_PER_PAGE;
+    u_int32_t row_number_within_page = row_num % rows_per_page;
     u_int32_t offset_in_bytes = row_number_within_page * ROW_SIZE;
 
     struct Row* row = page + offset_in_bytes;

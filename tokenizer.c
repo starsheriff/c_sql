@@ -55,6 +55,9 @@ prepare_insert_statement(struct InputBuffer* b, struct Statement* s) {
     }
 
     int id = atoi(id_string);
+    if(id < 0) {
+        return PARSE_NEGATIVE_ID;
+    }
     if(strlen(username) > COL_USERNAME_SIZE) {
         return PARSE_STRING_TOO_LONG;
     }

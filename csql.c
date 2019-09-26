@@ -140,6 +140,9 @@ int main(int argc, char* argv[]) {
             case(PARSE_STRING_TOO_LONG):
                 printf("one or more of the arguments is too long\n");
                 continue;
+            case(PARSE_NEGATIVE_ID):
+                printf("the id must be positive\n");
+                continue;
             default:
                 printf("unknown error\n");
                 continue;

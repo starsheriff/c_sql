@@ -18,6 +18,7 @@ enum ParseStatementResult{
     PARSE_STATEMENT_FAIL,
     PARSE_SYNTAX_ERROR,
     PARSE_STRING_TOO_LONG,
+    PARSE_NEGATIVE_ID,
 };
 
 struct Statement{

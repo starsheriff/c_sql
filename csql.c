@@ -137,6 +137,12 @@ int main(int argc, char* argv[]) {
             case(PARSE_STATEMENT_FAIL):
                 printf("error parsing statement\n");
                 continue;
+            case(PARSE_STRING_TOO_LONG):
+                printf("one or more of the arguments is too long\n");
+                continue;
+            default:
+                printf("unknown error\n");
+                continue;
         }
 
         switch (execute_statement(&statement, table)) {

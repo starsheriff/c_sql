@@ -83,7 +83,6 @@ void test_using_max_col_size() {
     printf("...ok\n");
 }
 
-
 int main(int argc, char* argv[]) {
     printf("Starting to test\n");
 

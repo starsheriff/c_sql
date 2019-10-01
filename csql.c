@@ -104,9 +104,15 @@ void print_help() {
 }
 
 int main(int argc, char* argv[]) {
+    if(argc < 2) {
+        printf("You need to specify the filename.\n");
+        exit(EXIT_FAILURE);
+    }
     print_welcome();
     struct InputBuffer* input_buffer = new_input_buffer();
-    struct Table* table = new_table();
+
+    char* filename = argv[1];
+    struct Table* table = db_open(filename);
 
     while(true) {
         print_prompt();
@@ -117,6 +123,8 @@ int main(int argc, char* argv[]) {
             case (COMMAND_HELP):
                 print_help();
             case (COMMAND_QUIT):
+                printf("closing database\n");
+                db_close(table);
                 exit(0);
             case (COMMAND_UNKNOWN):
                 printf("unrecognized command: '%s'. \n", input_buffer->buffer);

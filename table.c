@@ -7,7 +7,8 @@
 
 struct Table* db_open(const char* filename) {
     struct Pager* pager = pager_open(filename);
-    u_int32_t num_rows = pager->file_length/ROW_SIZE;
+    u_int32_t row_size = ROW_SIZE;
+    u_int32_t num_rows = pager->file_length/row_size;
 
     struct Table* t = malloc(sizeof(struct Table));
     t->pager = pager;
@@ -18,15 +19,20 @@ struct Table* db_open(const char* filename) {
 
 struct Row* row_slot(struct Table* table, u_int32_t row_num) {
     /* get the index of the page the row is in */
-    u_int32_t rows_per_page = ROWS_PER_PAGE;
+    u_int32_t rows_per_page = (u_int32_t) ROWS_PER_PAGE;
     u_int32_t page_num = row_num / rows_per_page;
 
     struct Page* page = get_page(table->pager, page_num);
+    if(page == NULL) {
+        printf("got a NULL page\n");
+        exit(EXIT_FAILURE);
+    }
 
     u_int32_t row_number_within_page = row_num % rows_per_page;
     u_int32_t offset_in_bytes = row_number_within_page * ROW_SIZE;
 
-    return (struct Row*) page + offset_in_bytes;
+
+    return (struct Row*) (page + row_num);
 }
 
 enum InsertResult insert_row(struct Table* t, struct Row r) {
@@ -75,8 +81,8 @@ struct Page* get_page(struct Pager* pager, u_int32_t page_num) {
     // load the page from file on cache miss
     if(pager->pages[page_num] == NULL) {
         struct Page* page = malloc(PAGE_SIZE);
-        u_int32_t num_pages = pager->file_length/PAGE_SIZE;
-        printf("num_pages: %u\n", num_pages);
+        u_int32_t page_size = PAGE_SIZE;
+        u_int32_t num_pages = pager->file_length/page_size;
 
         if(pager->file_length % PAGE_SIZE) {
             num_pages += 1;

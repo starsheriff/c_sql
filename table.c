@@ -9,6 +9,7 @@ struct Table* db_open(const char* filename) {
     struct Pager* pager = pager_open(filename);
     u_int32_t row_size = ROW_SIZE;
     u_int32_t num_rows = pager->file_length/row_size;
+    printf("rows in table: %u\n", num_rows);
 
     struct Table* t = malloc(sizeof(struct Table));
     t->pager = pager;
@@ -21,6 +22,7 @@ struct Row* row_slot(struct Table* table, u_int32_t row_num) {
     /* get the index of the page the row is in */
     u_int32_t rows_per_page = (u_int32_t) ROWS_PER_PAGE;
     u_int32_t page_num = row_num / rows_per_page;
+    printf("trying to get row: %u\n", row_num);
 
     struct Page* page = get_page(table->pager, page_num);
     if(page == NULL) {
@@ -28,11 +30,7 @@ struct Row* row_slot(struct Table* table, u_int32_t row_num) {
         exit(EXIT_FAILURE);
     }
 
-    u_int32_t row_number_within_page = row_num % rows_per_page;
-    u_int32_t offset_in_bytes = row_number_within_page * ROW_SIZE;
-
-
-    return (struct Row*) (page + row_num);
+    return (struct Row*)page + row_num;
 }
 
 enum InsertResult insert_row(struct Table* t, struct Row r) {
@@ -91,6 +89,7 @@ struct Page* get_page(struct Pager* pager, u_int32_t page_num) {
         if(page_num <= num_pages) {
             lseek(pager->file_descriptor, page_num*PAGE_SIZE, SEEK_SET);
             ssize_t bytes_read = read(pager->file_descriptor, page, PAGE_SIZE);
+            printf("bytes read for loaded page: %li\n", bytes_read);
             if(bytes_read == -1) {
                 printf("Error reading file");
                 exit(EXIT_FAILURE);
@@ -147,6 +146,7 @@ void db_close(struct Table* table) {
 };
 
 void pager_flush(struct Pager* pager, u_int32_t page_num, u_int32_t size) {
+    printf("writing %u bytes\n", size);
     if(pager->pages[page_num] == NULL) {
         printf("Tried to flush NULL page.\n");
         exit(EXIT_FAILURE);

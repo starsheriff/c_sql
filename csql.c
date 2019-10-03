@@ -64,12 +64,15 @@ enum ExecuteResult execute_insert(struct Statement* s, struct Table* t) {
     }
 
     struct Row row_to_insert = s->row_to_insert;
+    struct Cursor* cursor = table_end(t);
 
-    struct Row* row = row_slot(t, t->num_rows);
+    struct Row* row = cursor_row(cursor);
 
     /* copy data to location in table */
     *row = row_to_insert;
     t->num_rows += 1;
+
+    free(cursor);
 
     return EXECUTE_OK;
 }
@@ -80,11 +83,14 @@ void print_row(struct Row* row) {
 
 enum ExecuteResult execute_select(struct Statement* s, struct Table* t) {
     struct Row* row;
-    for(u_int32_t i=0; i < t->num_rows; i++) {
-        row = row_slot(t, i);
+    struct Cursor* cursor = table_start(t);
+    while(!cursor->end) {
+        row = cursor_row(cursor);
         print_row(row);
+        cursor_next(cursor);
     }
 
+    free(cursor);
     return EXECUTE_OK;
 }
 

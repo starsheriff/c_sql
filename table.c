@@ -18,13 +18,14 @@ struct Table* db_open(const char* filename) {
     return t;
 }
 
-struct Row* row_slot(struct Table* table, u_int32_t row_num) {
+struct Row* cursor_row(struct Cursor* cursor) {
     /* get the index of the page the row is in */
+    u_int32_t row_num = cursor->row_num;
     u_int32_t rows_per_page = (u_int32_t) ROWS_PER_PAGE;
     u_int32_t page_num = row_num / rows_per_page;
     printf("trying to get row: %u\n", row_num);
 
-    struct Page* page = get_page(table->pager, page_num);
+    struct Page* page = get_page(cursor->table->pager, page_num);
     if(page == NULL) {
         printf("got a NULL page\n");
         exit(EXIT_FAILURE);
@@ -38,7 +39,9 @@ enum InsertResult insert_row(struct Table* t, struct Row r) {
         return INSERT_TABLE_FULL;
     }
 
-    struct Row* dst = row_slot(t, t->num_rows);
+    struct Cursor* c = table_end(t);
+    struct Row* dst = cursor_row(c);
+    free(c);
 
     /* copy data to location in table */
     *dst = r;
@@ -162,5 +165,30 @@ void pager_flush(struct Pager* pager, u_int32_t page_num, u_int32_t size) {
     if(bytes_written == -1) {
         printf("Error writing to file.\n");
         exit(EXIT_FAILURE);
+    }
+}
+
+struct Cursor* table_start(struct Table* table) {
+    struct Cursor* cursor = malloc(sizeof(struct Cursor));
+    cursor->table = table;
+    cursor->row_num = 0;
+    cursor->end = (table->num_rows == 0);
+
+    return cursor;
+}
+
+struct Cursor* table_end(struct Table* table) {
+    struct Cursor* c = malloc(sizeof(struct Cursor));
+    c->table = table;
+    c->row_num = table->num_rows;
+    c->end = true;
+
+    return c;
+}
+
+void cursor_next(struct Cursor* c) {
+    c->row_num += 1;
+    if(c->row_num >= c->table->num_rows) {
+        c->end = true;
     }
 }

@@ -30,6 +30,12 @@ struct Table {
     struct Pager* pager;
 };
 
+struct Cursor{
+    struct Table* table;
+    u_int32_t row_num;
+    bool end;
+};
+
 enum InsertResult{
     INSERT_OK,
     INSERT_TABLE_FULL,
@@ -51,3 +57,7 @@ struct Pager* pager_open(const char* filename);
 struct Page* get_page(struct Pager* pager, u_int32_t page_num);
 void db_close(struct Table* table);
 void pager_flush(struct Pager* pager, u_int32_t page_num, u_int32_t n_bytes);
+struct Cursor* table_start(struct Table* table);
+struct Cursor* table_end(struct Table* table);
+struct Row* cursor_row(struct Cursor* cursor);
+void cursor_next(struct Cursor* cursor);
